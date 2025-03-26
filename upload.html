@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRINTIVA - Upload</title>
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Vanta.js FOG Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.fog.min.js"></script>
+    <!-- pdf.js for page counting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            position: relative;
+        }
+        :root {
+            --text: #2c3e50;
+            --card-bg: rgba(255, 255, 255, 0.99);
+            --shadow: rgba(0, 0, 0, 0.25);
+            --primary: #0277bd;
+            --primary-hover: #01579b;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --msg-bg: rgba(245, 247, 250, 0.99);
+            --accent: #026aa7;
+        }
+        body.dark { 
+            --text: #f5f5f5;
+            --card-bg: rgba(52, 73, 94, 0.99);
+            --shadow: rgba(0, 0, 0, 0.4);
+            --msg-bg: rgba(62, 92, 118, 0.99);
+            --accent: #026aa7;
+        }
+        #vanta-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            filter: blur(2px); /* Reduced blur for sharper effect */
+            opacity: 0.8; /* Increased opacity for more visibility */
+        }
+        body.dark #vanta-bg {
+            filter: blur(3px); /* Slightly more blur in dark mode, but still reduced */
+            opacity: 0.75; /* Increased opacity for dark mode */
+        }
+        main, header, nav {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.65); /* Restored semi-transparent white layer */
+        }
+        body.dark main, body.dark header, body.dark nav {
+            background: rgba(44, 62, 80, 0.9); /* Restored semi-transparent dark layer */
+        }
+        header {
+            background: linear-gradient(90deg, var(--primary), #42a5f5);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--accent);
+        }
+        #logo-container { display: flex; align-items: center; }
+        #logo { width: 220px; height: auto; margin-right: 25px; transition: transform 0.3s ease; }
+        #logo:hover { transform: scale(1.05); }
+        #brand-name { 
+            color: white; 
+            font-size: 30px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            display: none; 
+        }
+        #header-actions { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        #order-count { 
+            background: var(--card-bg); 
+            color: var(--primary); 
+            padding: 8px 18px; 
+            border-radius: 20px; 
+            font-weight: 500; 
+            box-shadow: 0 3px 6px var(--shadow);
+        }
+        .header-btn, .toggle-btn { 
+            background: var(--card-bg); 
+            color: var(--primary); 
+            padding: 10px 25px; 
+            border-radius: 25px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 3px 6px var(--shadow);
+            border: 1px solid var(--accent);
+        }
+        .header-btn:hover, .toggle-btn:hover { 
+            background: var(--accent); 
+            color: white; 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 12px var(--shadow);
+        }
+        main { max-width: 1400px; margin: 40px auto; padding: 20px; border-radius: 15px; }
+        h2 { 
+            text-align: center; 
+            color: var(--primary); 
+            font-size: 48px; 
+            font-weight: 700; 
+            margin: 30px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 2px 2px 4px var(--shadow);
+        }
+        h3.category-heading { 
+            color: var(--primary); 
+            font-size: 36px; 
+            margin: 40px 0 20px; 
+            text-align: center; 
+            border-bottom: 2px solid var(--accent); 
+            padding-bottom: 10px; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 2px 2px 4px var(--shadow);
+        }
+        #service-list { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 30px; 
+        }
+        .service { 
+            background: var(--card-bg); 
+            border-radius: 15px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 6px 20px var(--shadow); 
+            transition: all 0.3s ease; 
+            border: 1px solid var(--accent);
+        }
+        body.dark .service {
+            background: linear-gradient(145deg, rgba(52, 73, 94, 0.99), rgba(44, 62, 80, 0.99));
+        }
+        .service:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 30px var(--shadow); 
+            border-color: var(--primary);
+        }
+        .service h3 { 
+            color: var(--primary); 
+            margin: 0 0 15px; 
+            font-size: 24px; 
+        }
+        .service p { 
+            margin: 8px 0; 
+            font-size: 15px; 
+            font-weight: 500; 
+            color: var(--text); 
+        }
+        .price-display { 
+            margin: 10px 0; 
+            font-size: 16px; 
+            font-weight: 700; 
+            color: var(--success); 
+        }
+        input[type="file"], input[type="number"] { 
+            margin: 15px 0; 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid var(--accent); 
+            border-radius: 8px; 
+            font-size: 15px; 
+            background: var(--card-bg); 
+            color: var(--text); 
+        }
+        button { 
+            background: var(--success); 
+            color: white; 
+            border: none; 
+            padding: 15px; 
+            border-radius: 10px; 
+            width: 100%; 
+            cursor: pointer; 
+            font-size: 18px; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        button:hover { 
+            background: #27ae60; 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 16px var(--shadow);
+        }
+        nav { 
+            position: sticky; 
+            bottom: 0; 
+            background: rgba(255, 255, 255, 0.95); /* Restored semi-transparent white layer */
+            backdrop-filter: blur(10px); 
+            box-shadow: 0 -2px 10px var(--shadow); 
+            z-index: 10; 
+            border-top: 2px solid var(--accent); 
+        }
+        body.dark nav { background: rgba(44, 62, 80, 0.95); }
+        nav ul { 
+            display: flex; 
+            justify-content: center; 
+            list-style: none; 
+            padding: 15px 0; 
+            margin: 0; 
+        }
+        nav a { 
+            text-decoration: none; 
+            color: var(--text); 
+            font-weight: 500; 
+            padding: 12px 25px; 
+            border-radius: 20px; 
+            transition: all 0.3s ease; 
+        }
+        nav a:hover, nav a.active { 
+            background: var(--accent); 
+            color: white; 
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; padding: 15px; }
+            #logo { width: 180px; }
+            #header-actions { margin-top: 15px; gap: 10px; justify-content: center; }
+            h2 { font-size: 36px; }
+            h3.category-heading { font-size: 28px; }
+            #service-list { grid-template-columns: 1fr; }
+            nav ul { flex-direction: column; text-align: center; }
+            nav a { display: block; margin: 5px 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Container for the Vanta effect -->
+    <div id="vanta-bg"></div>
+
+    <header>
+        <div id="logo-container">
+            <img id="logo" src="printiva_logo.jpg" alt="PRINTIVA Logo" onerror="this.style.display='none'; document.getElementById('brand-name').style.display='block';">
+            <span id="brand-name">PRINTIVA</span>
+        </div>
+        <div id="header-actions">
+            <span id="order-count">0</span>
+            <span class="header-btn" onclick="location.href='account.html'">Account</span>
+            <span class="header-btn" onclick="location.href='payment.html'">Payment</span>
+            <span class="header-btn" onclick="location.href='chat.html'">Live Chat</span>
+            <span class="header-btn toggle-btn" onclick="toggleDarkMode()">Dark Mode</span>
+        </div>
+    </header>
+    <main>
+        <h2>Upload Your Files</h2>
+
+        <!-- General Printing -->
+        <h3 class="category-heading">General Printing</h3>
+        <div id="service-list">
+            <div class="service">
+                <h3>A4 Black & White</h3>
+                <p>₹1.50 per page</p> <!-- Changed from ₹0.89 to ₹1.50 -->
+                <p>High-quality laser, 300 DPI</p>
+                <input type="file" id="file-bw" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-bw', 'pages-bw', 1.50)"> <!-- Updated price -->
+                <input type="number" id="pages-bw" min="1" placeholder="No. of pages" oninput="updatePrice('bw', 1.50)"> <!-- Updated price -->
+                <p id="price-bw" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('A4 Black & White', 1.50, 'file-bw', 'pages-bw')">Add to Order</button> <!-- Updated price -->
+            </div>
+            <div class="service">
+                <h3>A4 Color</h3>
+                <p>₹3.93 per page</p>
+                <p>Vibrant inkjet, 600 DPI</p>
+                <input type="file" id="file-color" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-color', 'pages-color', 3.93)">
+                <input type="number" id="pages-color" min="1" placeholder="No. of pages" oninput="updatePrice('color', 3.93)">
+                <p id="price-color" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('A4 Color', 3.93, 'file-color', 'pages-color')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>A3 Black & White</h3>
+                <p>₹3.00 per page</p>
+                <p>Large-format, crisp output</p>
+                <input type="file" id="file-a3" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-a3', 'pages-a3', 3.00)">
+                <input type="number" id="pages-a3" min="1" placeholder="No. of pages" oninput="updatePrice('a3', 3.00)">
+                <p id="price-a3" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('A3 Black & White', 3.00, 'file-a3', 'pages-a3')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>PDF Print</h3>
+                <p>₹1.20 per page</p>
+                <p>High-quality printing for PDFs</p>
+                <input type="file" id="file-pdf" accept=".pdf" onchange="debouncedCalculatePageCount('file-pdf', 'pages-pdf', 1.20)">
+                <input type="number" id="pages-pdf" min="1" placeholder="No. of pages" oninput="updatePrice('pdf', 1.20)">
+                <p id="price-pdf" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('PDF Print', 1.20, 'file-pdf', 'pages-pdf')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Annual Report Printing</h3>
+                <p>₹2.00 per page</p>
+                <p>Professional printing for annual reports</p>
+                <input type="file" id="file-annual-report" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-annual-report', 'pages-annual-report', 2.00)">
+                <input type="number" id="pages-annual-report" min="1" placeholder="No. of pages" oninput="updatePrice('annual-report', 2.00)">
+                <p id="price-annual-report" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Annual Report Printing', 2.00, 'file-annual-report', 'pages-annual-report')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Fitness Plan Printing</h3>
+                <p>₹1.80 per page</p>
+                <p>Clear printing for fitness plans</p>
+                <input type="file" id="file-fitness-plan" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-fitness-plan', 'pages-fitness-plan', 1.80)">
+                <input type="number" id="pages-fitness-plan" min="1" placeholder="No. of pages" oninput="updatePrice('fitness-plan', 1.80)">
+                <p id="price-fitness-plan" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Fitness Plan Printing', 1.80, 'file-fitness-plan', 'pages-fitness-plan')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Legal Document Print</h3>
+                <p>₹1.50 per page</p>
+                <p>High-quality printing for legal documents</p>
+                <input type="file" id="file-legal" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-legal', 'pages-legal', 1.50)">
+                <input type="number" id="pages-legal" min="1" placeholder="No. of pages" oninput="updatePrice('legal', 1.50)">
+                <p id="price-legal" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Legal Document Print', 1.50, 'file-legal', 'pages-legal')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Homework Worksheet Printing</h3>
+                <p>₹1.00 per page</p>
+                <p>Perfect for educational worksheets</p>
+                <input type="file" id="file-worksheet" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-worksheet', 'pages-worksheet', 1.00)">
+                <input type="number" id="pages-worksheet" min="1" placeholder="No. of pages" oninput="updatePrice('worksheet', 1.00)">
+                <p id="price-worksheet" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Homework Worksheet Printing', 1.00, 'file-worksheet', 'pages-worksheet')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Survey & Questionnaire Printing</h3>
+                <p>₹1.30 per page</p>
+                <p>Clear printing for surveys</p>
+                <input type="file" id="file-survey" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-survey', 'pages-survey', 1.30)">
+                <input type="number" id="pages-survey" min="1" placeholder="No. of pages" oninput="updatePrice('survey', 1.30)">
+                <p id="price-survey" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Survey & Questionnaire Printing', 1.30, 'file-survey', 'pages-survey')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Script Printing</h3>
+                <p>₹1.60 per page</p>
+                <p>High-quality printing for scripts</p>
+                <input type="file" id="file-script" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-script', 'pages-script', 1.60)">
+                <input type="number" id="pages-script" min="1" placeholder="No. of pages" oninput="updatePrice('script', 1.60)">
+                <p id="price-script" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Script Printing', 1.60, 'file-script', 'pages-script')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>CV/Resume Print</h3>
+                <p>₹2.50 per page</p>
+                <p>Professional printing for CVs and resumes</p>
+                <input type="file" id="file-cv" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-cv', 'pages-cv', 2.50)">
+                <input type="number" id="pages-cv" min="1" placeholder="No. of pages" oninput="updatePrice('cv', 2.50)">
+                <p id="price-cv" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('CV/Resume Print', 2.50, 'file-cv', 'pages-cv')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Bills/Invoice Printing</h3>
+                <p>₹1.10 per page</p>
+                <p>Clear printing for invoices</p>
+                <input type="file" id="file-invoice" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-invoice', 'pages-invoice', 1.10)">
+                <input type="number" id="pages-invoice" min="1" placeholder="No. of pages" oninput="updatePrice('invoice', 1.10)">
+                <p id="price-invoice" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Bills/Invoice Printing', 1.10, 'file-invoice', 'pages-invoice')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Religious Printing & Publishing</h3>
+                <p>₹1.90 per page</p>
+                <p>High-quality printing for religious texts</p>
+                <input type="file" id="file-religious" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-religious', 'pages-religious', 1.90)">
+                <input type="number" id="pages-religious" min="1" placeholder="No. of pages" oninput="updatePrice('religious', 1.90)">
+                <p id="price-religious" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Religious Printing & Publishing', 1.90, 'file-religious', 'pages-religious')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Event Programmes</h3>
+                <p>₹2.20 per page</p>
+                <p>Professional printing for event programs</p>
+                <input type="file" id="file-event-programme" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-event-programme', 'pages-event-programme', 2.20)">
+                <input type="number" id="pages-event-programme" min="1" placeholder="No. of pages" oninput="updatePrice('event-programme', 2.20)">
+                <p id="price-event-programme" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Event Programmes', 2.20, 'file-event-programme', 'pages-event-programme')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Newsletter Printing</h3>
+                <p>₹1.70 per page</p>
+                <p>High-quality printing for newsletters</p>
+                <input type="file" id="file-newsletter" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-newsletter', 'pages-newsletter', 1.70)">
+                <input type="number" id="pages-newsletter" min="1" placeholder="No. of pages" oninput="updatePrice('newsletter', 1.70)">
+                <p id="price-newsletter" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Newsletter Printing', 1.70, 'file-newsletter', 'pages-newsletter')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>A5 Printing</h3>
+                <p>₹0.95 per page</p>
+                <p>High-quality A5 printing</p>
+                <input type="file" id="file-a5" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-a5', 'pages-a5', 0.95)">
+                <input type="number" id="pages-a5" min="1" placeholder="No. of pages" oninput="updatePrice('a5', 0.95)">
+                <p id="price-a5" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('A5 Printing', 0.95, 'file-a5', 'pages-a5')">Add to Order</button>
+            </div>
+        </div>
+
+        <!-- Book Printing -->
+        <h3 class="category-heading">Book Printing</h3>
+        <div id="service-list">
+            <div class="service">
+                <h3>Paperback/Softcover Books</h3>
+                <p>₹4.00 per page</p>
+                <p>High-quality paperback printing</p>
+                <input type="file" id="file-paperback" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-paperback', 'pages-paperback', 4.00)">
+                <input type="number" id="pages-paperback" min="1" placeholder="No. of pages" oninput="updatePrice('paperback', 4.00)">
+                <p id="price-paperback" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Paperback/Softcover Books', 4.00, 'file-paperback', 'pages-paperback')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Hardbound/Hardback Books</h3>
+                <p>₹8.00 per page</p>
+                <p>Durable hardback book printing</p>
+                <input type="file" id="file-hardbound" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-hardbound', 'pages-hardbound', 8.00)">
+                <input type="number" id="pages-hardbound" min="1" placeholder="No. of pages" oninput="updatePrice('hardbound', 8.00)">
+                <p id="price-hardbound" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Hardbound/Hardback Books', 8.00, 'file-hardbound', 'pages-hardbound')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Study Material/Guide Printing</h3>
+                <p>₹3.80 per page</p>
+                <p>High-quality printing for study materials</p>
+                <input type="file" id="file-study-material" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-study-material', 'pages-study-material', 3.80)">
+                <input type="number" id="pages-study-material" min="1" placeholder="No. of pages" oninput="updatePrice('study-material', 3.80)">
+                <p id="price-study-material" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Study Material/Guide Printing', 3.80, 'file-study-material', 'pages-study-material')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Training/Instruction Manual Printing</h3>
+                <p>₹4.20 per page</p>
+                <p>Clear printing for manuals</p>
+                <input type="file" id="file-manual" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-manual', 'pages-manual', 4.20)">
+                <input type="number" id="pages-manual" min="1" placeholder="No. of pages" oninput="updatePrice('manual', 4.20)">
+                <p id="price-manual" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Training/Instruction Manual Printing', 4.20, 'file-manual', 'pages-manual')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>School Book Printing</h3>
+                <p>₹3.50 per page</p>
+                <p>High-quality printing for school books</p>
+                <input type="file" id="file-school-book" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-school-book', 'pages-school-book', 3.50)">
+                <input type="number" id="pages-school-book" min="1" placeholder="No. of pages" oninput="updatePrice('school-book', 3.50)">
+                <p id="price-school-book" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('School Book Printing', 3.50, 'file-school-book', 'pages-school-book')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Comic Book Printing</h3>
+                <p>₹6.50 per page</p>
+                <p>Vibrant printing for comic books</p>
+                <input type="file" id="file-comic" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-comic', 'pages-comic', 6.50)">
+                <input type="number" id="pages-comic" min="1" placeholder="No. of pages" oninput="updatePrice('comic', 6.50)">
+                <p id="price-comic" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Comic Book Printing', 6.50, 'file-comic', 'pages-comic')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Family History Book Printing</h3>
+                <p>₹5.00 per page</p>
+                <p>Preserve your family history</p>
+                <input type="file" id="file-family-history" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-family-history', 'pages-family-history', 5.00)">
+                <input type="number" id="pages-family-history" min="1" placeholder="No. of pages" oninput="updatePrice('family-history', 5.00)">
+                <p id="price-family-history" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Family History Book Printing', 5.00, 'file-family-history', 'pages-family-history')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Bulk Book Printing</h3>
+                <p>₹3.00 per page</p>
+                <p>Cost-effective bulk book printing</p>
+                <input type="file" id="file-bulk-book" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-bulk-book', 'pages-bulk-book', 3.00)">
+                <input type="number" id="pages-bulk-book" min="1" placeholder="No. of pages" oninput="updatePrice('bulk-book', 3.00)">
+                <p id="price-bulk-book" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Bulk Book Printing', 3.00, 'file-bulk-book', 'pages-bulk-book')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Magazines</h3>
+                <p>₹5.50 per page</p>
+                <p>Glossy magazine printing</p>
+                <input type="file" id="file-magazine" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-magazine', 'pages-magazine', 5.50)">
+                <input type="number" id="pages-magazine" min="1" placeholder="No. of pages" oninput="updatePrice('magazine', 5.50)">
+                <p id="price-magazine" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Magazines', 5.50, 'file-magazine', 'pages-magazine')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Gaming Rulesbook</h3>
+                <p>₹6.00 per page</p>
+                <p>Clear printing for gaming rules</p>
+                <input type="file" id="file-gaming-rules" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-gaming-rules', 'pages-gaming-rules', 6.00)">
+                <input type="number" id="pages-gaming-rules" min="1" placeholder="No. of pages" oninput="updatePrice('gaming-rules', 6.00)">
+                <p id="price-gaming-rules" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Gaming Rulesbook', 6.00, 'file-gaming-rules', 'pages-gaming-rules')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Children Book</h3>
+                <p>₹7.00 per page</p>
+                <p>Vibrant printing for children’s books</p>
+                <input type="file" id="file-children-book" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-children-book', 'pages-children-book', 7.00)">
+                <input type="number" id="pages-children-book" min="1" placeholder="No. of pages" oninput="updatePrice('children-book', 7.00)">
+                <p id="price-children-book" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Children Book', 7.00, 'file-children-book', 'pages-children-book')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Portfolios</h3>
+                <p>₹5.20 per page</p>
+                <p>Professional portfolio printing</p>
+                <input type="file" id="file-portfolio" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-portfolio', 'pages-portfolio', 5.20)">
+                <input type="number" id="pages-portfolio" min="1" placeholder="No. of pages" oninput="updatePrice('portfolio', 5.20)">
+                <p id="price-portfolio" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Portfolios', 5.20, 'file-portfolio', 'pages-portfolio')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Yearbook Print</h3>
+                <p>₹4.80 per page</p>
+                <p>Memorable yearbook printing</p>
+                <input type="file" id="file-yearbook" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-yearbook', 'pages-yearbook', 4.80)">
+                <input type="number" id="pages-yearbook" min="1" placeholder="No. of pages" oninput="updatePrice('yearbook', 4.80)">
+                <p id="price-yearbook" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Yearbook Print', 4.80, 'file-yearbook', 'pages-yearbook')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Presentations</h3>
+                <p>₹4.50 per page</p>
+                <p>High-quality presentation printing</p>
+                <input type="file" id="file-presentation" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-presentation', 'pages-presentation', 4.50)">
+                <input type="number" id="pages-presentation" min="1" placeholder="No. of pages" oninput="updatePrice('presentation', 4.50)">
+                <p id="price-presentation" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Presentations', 4.50, 'file-presentation', 'pages-presentation')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Proposal Print</h3>
+                <p>₹4.70 per page</p>
+                <p>Professional proposal printing</p>
+                <input type="file" id="file-proposal" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-proposal', 'pages-proposal', 4.70)">
+                <input type="number" id="pages-proposal" min="1" placeholder="No. of pages" oninput="updatePrice('proposal', 4.70)">
+                <p id="price-proposal" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Proposal Print', 4.70, 'file-proposal', 'pages-proposal')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Instructions Print</h3>
+                <p>₹3.90 per page</p>
+                <p>Clear printing for instructions</p>
+                <input type="file" id="file-instructions" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-instructions', 'pages-instructions', 3.90)">
+                <input type="number" id="pages-instructions" min="1" placeholder="No. of pages" oninput="updatePrice('instructions', 3.90)">
+                <p id="price-instructions" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Instructions Print', 3.90, 'file-instructions', 'pages-instructions')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Thesis/Dissertation Print</h3>
+                <p>₹5.50 per page</p>
+                <p>High-quality academic printing</p>
+                <input type="file" id="file-thesis" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-thesis', 'pages-thesis', 5.50)">
+                <input type="number" id="pages-thesis" min="1" placeholder="No. of pages" oninput="updatePrice('thesis', 5.50)">
+                <p id="price-thesis" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Thesis/Dissertation Print', 5.50, 'file-thesis', 'pages-thesis')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Final Major Projects</h3>
+                <p>₹5.30 per page</p>
+                <p>Professional printing for projects</p>
+                <input type="file" id="file-final-project" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-final-project', 'pages-final-project', 5.30)">
+                <input type="number" id="pages-final-project" min="1" placeholder="No. of pages" oninput="updatePrice('final-project', 5.30)">
+                <p id="price-final-project" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Final Major Projects', 5.30, 'file-final-project', 'pages-final-project')">Add to Order</button>
+            </div>
+        </div>
+
+        <!-- Specialty Printing -->
+        <h3 class="category-heading">Specialty Printing</h3>
+        <div id="service-list">
+            <div class="service">
+                <h3>Photo Print (4x6)</h3>
+                <p>₹6 per photo</p>
+                <p>Glossy, fade-resistant, 1200 DPI</p>
+                <input type="file" id="file-photo" accept=".jpg,.png">
+                <input type="number" id="pages-photo" min="1" placeholder="No. of prints" oninput="updatePrice('photo', 6)">
+                <p id="price-photo" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Photo Print (4x6)', 6, 'file-photo', 'pages-photo')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Poster (A2)</h3>
+                <p>₹40 per poster</p>
+                <p>Matte/Glossy, UV-protected</p>
+                <input type="file" id="file-poster" accept=".pdf,.jpg,.png" onchange="debouncedCalculatePageCount('file-poster', 'pages-poster', 40)">
+                <input type="number" id="pages-poster" min="1" placeholder="No. of posters" oninput="updatePrice('poster', 40)">
+                <p id="price-poster" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Poster (A2)', 40, 'file-poster', 'pages-poster')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Business Cards</h3>
+                <p>₹200 per 100 cards</p>
+                <p>350 GSM, double-sided</p>
+                <input type="file" id="file-cards" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-cards" min="1" placeholder="No. of sets (100s)" oninput="updatePrice('cards', 200)">
+                <p id="price-cards" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Business Cards', 200, 'file-cards', 'pages-cards')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Canvas Print (12x18)</h3>
+                <p>₹300 per canvas</p>
+                <p>Gallery-wrapped, wooden frame</p>
+                <input type="file" id="file-canvas" accept=".jpg,.png">
+                <input type="number" id="pages-canvas" min="1" placeholder="No. of canvases" oninput="updatePrice('canvas', 300)">
+                <p id="price-canvas" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Canvas Print (12x18)', 300, 'file-canvas', 'pages-canvas')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Flyers (A5)</h3>
+                <p>₹42.50 per 50 flyers</p>
+                <p>Glossy, full-color printing</p>
+                <input type="file" id="file-flyers" accept=".pdf,.jpg,.png" onchange="debouncedCalculatePageCount('file-flyers', 'pages-flyers', 42.50)">
+                <input type="number" id="pages-flyers" min="1" placeholder="No. of sets (50s)" oninput="updatePrice('flyers', 42.50)">
+                <p id="price-flyers" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Flyers (A5)', 42.50, 'file-flyers', 'pages-flyers')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Stickers (Custom)</h3>
+                <p>₹150 per 100 stickers</p>
+                <p>Vinyl, waterproof, die-cut</p>
+                <input type="file" id="file-stickers" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-stickers" min="1" placeholder="No. of sets (100s)" oninput="updatePrice('stickers', 150)">
+                <p id="price-stickers" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Stickers (Custom)', 150, 'file-stickers', 'pages-stickers')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Calendars (A4, 12 Months)</h3>
+                <p>₹300 per calendar</p>
+                <p>Glossy, customizable designs</p>
+                <input type="file" id="file-calendars" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-calendars" min="1" placeholder="No. of calendars" oninput="updatePrice('calendars', 300)">
+                <p id="price-calendars" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Calendars (A4, 12 Months)', 300, 'file-calendars', 'pages-calendars')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Notecards</h3>
+                <p>₹400 per 50 notecards</p>
+                <p>High-quality notecard printing</p>
+                <input type="file" id="file-notecards" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-notecards" min="1" placeholder="No. of sets (50s)" oninput="updatePrice('notecards', 400)">
+                <p id="price-notecards" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Notecards', 400, 'file-notecards', 'pages-notecards')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Certificate Printing</h3>
+                <p>₹80 per certificate</p>
+                <p>Professional certificate printing</p>
+                <input type="file" id="file-certificate" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-certificate" min="1" placeholder="No. of certificates" oninput="updatePrice('certificate', 80)">
+                <p id="price-certificate" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Certificate Printing', 80, 'file-certificate', 'pages-certificate')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Flash Card Printing</h3>
+                <p>₹300 per 50 cards</p>
+                <p>Durable flash card printing</p>
+                <input type="file" id="file-flash-cards" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-flash-cards" min="1" placeholder="No. of sets (50s)" oninput="updatePrice('flash-cards', 300)">
+                <p id="price-flash-cards" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Flash Card Printing', 300, 'file-flash-cards', 'pages-flash-cards')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Brochures</h3>
+                <p>₹6 per page</p>
+                <p>Glossy brochure printing</p>
+                <input type="file" id="file-brochures" accept=".pdf,.jpg,.png" onchange="debouncedCalculatePageCount('file-brochures', 'pages-brochures', 6)">
+                <input type="number" id="pages-brochures" min="1" placeholder="No. of pages" oninput="updatePrice('brochures', 6)">
+                <p id="price-brochures" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Brochures', 6, 'file-brochures', 'pages-brochures')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Table and Tentcards</h3>
+                <p>₹200 per 10 cards</p>
+                <p>High-quality tentcard printing</p>
+                <input type="file" id="file-tentcards" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-tentcards" min="1" placeholder="No. of sets (10s)" oninput="updatePrice('tentcards', 200)">
+                <p id="price-tentcards" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Table and Tentcards', 200, 'file-tentcards', 'pages-tentcards')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Framed Posters</h3>
+                <p>₹150 per poster</p>
+                <p>Framed, UV-protected posters</p>
+                <input type="file" id="file-framed-poster" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-framed-poster" min="1" placeholder="No. of posters" oninput="updatePrice('framed-poster', 150)">
+                <p id="price-framed-poster" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Framed Posters', 150, 'file-framed-poster', 'pages-framed-poster')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Graphics and Art Prints</h3>
+                <p>₹180 per print</p>
+                <p>High-quality art printing</p>
+                <input type="file" id="file-art-prints" accept=".jpg,.png">
+                <input type="number" id="pages-art-prints" min="1" placeholder="No. of prints" oninput="updatePrice('art-prints', 180)">
+                <p id="price-art-prints" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Graphics and Art Prints', 180, 'file-art-prints', 'pages-art-prints')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Letterhead Printing</h3>
+                <p>₹250 per 50 sheets</p>
+                <p>Professional letterhead printing</p>
+                <input type="file" id="file-letterhead" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-letterhead" min="1" placeholder="No. of sets (50s)" oninput="updatePrice('letterhead', 250)">
+                <p id="price-letterhead" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Letterhead Printing', 250, 'file-letterhead', 'pages-letterhead')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Bill Books</h3>
+                <p>₹200 per book</p>
+                <p>Custom bill book printing</p>
+                <input type="file" id="file-bill-book" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-bill-book" min="1" placeholder="No. of books" oninput="updatePrice('bill-book', 200)">
+                <p id="price-bill-book" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Bill Books', 200, 'file-bill-book', 'pages-bill-book')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Notebook</h3>
+                <p>₹150 per notebook</p>
+                <p>Custom notebook printing</p>
+                <input type="file" id="file-notebook" accept=".pdf,.jpg,.png">
+                <input type="number" id="pages-notebook" min="1" placeholder="No. of notebooks" oninput="updatePrice('notebook', 150)">
+                <p id="price-notebook" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Notebook', 150, 'file-notebook', 'pages-notebook')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Framed Photos</h3>
+                <p>₹160 per photo</p>
+                <p>Framed, high-quality photos</p>
+                <input type="file" id="file-framed-photo" accept=".jpg,.png">
+                <input type="number" id="pages-framed-photo" min="1" placeholder="No. of photos" oninput="updatePrice('framed-photo', 160)">
+                <p id="price-framed-photo" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Framed Photos', 160, 'file-framed-photo', 'pages-framed-photo')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Cushion Print</h3>
+                <p>₹400 per cushion</p>
+                <p>Custom cushion printing</p>
+                <input type="file" id="file-cushion" accept=".jpg,.png">
+                <input type="number" id="pages-cushion" min="1" placeholder="No. of cushions" oninput="updatePrice('cushion', 400)">
+                <p id="price-cushion" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Cushion Print', 400, 'file-cushion', 'pages-cushion')">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Mug Printing</h3>
+                <p>₹250 per mug</p>
+                <p>Custom mug printing</p>
+                <input type="file" id="file-mug" accept=".jpg,.png">
+                <input type="number" id="pages-mug" min="1" placeholder="No. of mugs" oninput="updatePrice('mug', 250)">
+                <p id="price-mug" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Mug Printing', 250, 'file-mug', 'pages-mug')">Add to Order</button>
+            </div>
+        </div>
+
+        <!-- Binding Services -->
+        <h3 class="category-heading">Binding Services</h3>
+        <div id="service-list">
+            <div class="service">
+                <h3>Spiral Binding</h3>
+                <p>₹30 + ₹2 per page</p>
+                <p>Durable, clear cover included</p>
+                <input type="file" id="file-binding" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-binding', 'pages-binding', 2, 30)">
+                <input type="number" id="pages-binding" min="1" placeholder="No. of pages" oninput="updatePrice('binding', 2, 30)">
+                <p id="price-binding" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Spiral Binding', 2, 'file-binding', 'pages-binding', 30)">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Corner Staple Binding</h3>
+                <p>₹10 + ₹0.50 per page</p>
+                <p>Simple corner staple binding</p>
+                <input type="file" id="file-corner-staple" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-corner-staple', 'pages-corner-staple', 0.50, 10)">
+                <input type="number" id="pages-corner-staple" min="1" placeholder="No. of pages" oninput="updatePrice('corner-staple', 0.50, 10)">
+                <p id="price-corner-staple" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Corner Staple Binding', 0.50, 'file-corner-staple', 'pages-corner-staple', 10)">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Staple Binding</h3>
+                <p>₹12 + ₹0.70 per page</p>
+                <p>Standard staple binding</p>
+                <input type="file" id="file-staple" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-staple', 'pages-staple', 0.70, 12)">
+                <input type="number" id="pages-staple" min="1" placeholder="No. of pages" oninput="updatePrice('staple', 0.70, 12)">
+                <p id="price-staple" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Staple Binding', 0.70, 'file-staple', 'pages-staple', 12)">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Center Staple Binding</h3>
+                <p>₹15 + ₹0.80 per page</p>
+                <p>Saddle stitch binding</p>
+                <input type="file" id="file-center-staple" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-center-staple', 'pages-center-staple', 0.80, 15)">
+                <input type="number" id="pages-center-staple" min="1" placeholder="No. of pages" oninput="updatePrice('center-staple', 0.80, 15)">
+                <p id="price-center-staple" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Center Staple Binding', 0.80, 'file-center-staple', 'pages-center-staple', 15)">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Wiro Binding</h3>
+                <p>₹20 + ₹1.00 per page</p>
+                <p>Durable wiro binding</p>
+                <input type="file" id="file-wiro" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-wiro', 'pages-wiro', 1.00, 20)">
+                <input type="number" id="pages-wiro" min="1" placeholder="No. of pages" oninput="updatePrice('wiro', 1.00, 20)">
+                <p id="price-wiro" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Wiro Binding', 1.00, 'file-wiro', 'pages-wiro', 20)">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Soft Cover Binding</h3>
+                <p>₹35 + ₹1.50 per page</p>
+                <p>Soft cover binding option</p>
+                <input type="file" id="file-soft-cover" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-soft-cover', 'pages-soft-cover', 1.50, 35)">
+                <input type="number" id="pages-soft-cover" min="1" placeholder="No. of pages" oninput="updatePrice('soft-cover', 1.50, 35)">
+                <p id="price-soft-cover" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Soft Cover Binding', 1.50, 'file-soft-cover', 'pages-soft-cover', 35)">Add to Order</button>
+            </div>
+            <div class="service">
+                <h3>Glue/Tape Binding</h3>
+                <p>₹25 + ₹1.20 per page</p>
+                <p>Secure glue/tape binding</p>
+                <input type="file" id="file-glue-tape" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-glue-tape', 'pages-glue-tape', 1.20, 25)">
+                <input type="number" id="pages-glue-tape" min="1" placeholder="No. of pages" oninput="updatePrice('glue-tape', 1.20, 25)">
+                <p id="price-glue-tape" class="price-display">Total: ₹0.00</p>
+                <button onclick="addToOrder('Glue/Tape Binding', 1.20, 'file-glue-tape', 'pages-glue-tape', 25)">Add to Order</button>
+            </div>
+        </div>
+    </main>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="upload.html" class="active">Upload</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="track.html">Track</a></li>
+        </ul>
+    </nav>
+
+    <script>
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        document.getElementById('order-count').innerText = orders.length;
+
+        let vantaEffect;
+
+        // Function to initialize or update the Vanta FOG effect
+        function initializeVanta() {
+            if (vantaEffect) {
+                console.log('Destroying previous Vanta effect...');
+                vantaEffect.destroy();
+                vantaEffect = null;
+            }
+
+            if (typeof VANTA === 'undefined') {
+                console.error('Vanta.js is not loaded. Please check the CDN links.');
+                return;
+            }
+
+            const isDarkMode = document.body.classList.contains('dark');
+            console.log('Initializing Vanta FOG effect for', isDarkMode ? 'dark mode' : 'light mode');
+            try {
+                vantaEffect = VANTA.FOG({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: false,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    highlightColor: 0x1e88e5, // Vibrant blue for highlights
+                    midtoneColor: isDarkMode ? 0x90caf9 : 0x64b5f6, // Lighter blues for midtones
+                    lowlightColor: isDarkMode ? 0x1976d2 : 0x42a5f5, // Slightly darker blues for lowlights
+                    baseColor: 0x555588, // Using the requested blue color as the base
+                    blurFactor: isDarkMode ? 0.5 : 0.55, // Reduced for a sharper effect
+                    speed: 2.5, // Increased for more noticeable motion
+                    zoom: isDarkMode ? 0.9 : 1.0 // Increased to make the effect appear closer
+                });
+                console.log('Vanta FOG effect initialized successfully:', vantaEffect);
+            } catch (error) {
+                console.error('Error initializing Vanta FOG effect:', error);
+            }
+        }
+
+        // Initialize Vanta effect after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded, initializing Vanta effect...');
+            initializeVanta();
+        });
+
+        // Update Vanta effect when toggling dark mode
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            const btn = document.querySelector('.toggle-btn');
+            btn.textContent = document.body.classList.contains('dark') ? 'Light Mode' : 'Dark Mode';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+            console.log('Toggling mode to', document.body.classList.contains('dark') ? 'dark' : 'light');
+            setTimeout(() => {
+                initializeVanta();
+            }, 300);
+        }
+
+        // Load dark mode state
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+            document.querySelector('.toggle-btn').textContent = 'Light Mode';
+            setTimeout(() => {
+                initializeVanta();
+            }, 300);
+        }
+
+        // Debounce function to limit how often calculatePageCount is called
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        // Optimized function to calculate the number of pages in a PDF
+        async function calculatePageCount(fileInputId, pagesInputId, pricePerPage, basePrice = 0) {
+            const fileInput = document.getElementById(fileInputId);
+            const pagesInput = document.getElementById(pagesInputId);
+            const file = fileInput.files[0];
+
+            if (!file) {
+                pagesInput.value = '';
+                updatePrice(pagesInputId.split('-')[1], pricePerPage, basePrice);
+                return;
+            }
+
+            if (file.type === 'application/pdf') {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({
+                        data: arrayBuffer,
+                        disableFontFace: true,
+                        disableRange: true,
+                        disableStream: true,
+                        disableAutoFetch: true,
+                        verbosity: 0
+                    }).promise;
+                    const pageCount = pdf.numPages;
+
+                    pagesInput.value = pageCount;
+                    updatePrice(pagesInputId.split('-')[1], pricePerPage, basePrice);
+
+                    pdf.destroy();
+                } catch (error) {
+                    console.error('Error calculating PDF page count:', error);
+                    alert('Unable to calculate the page count for this PDF. Please enter the number of pages manually.');
+                    pagesInput.value = '';
+                    updatePrice(pagesInputId.split('-')[1], pricePerPage, basePrice);
+                }
+            } else {
+                pagesInput.value = '';
+                updatePrice(pagesInputId.split('-')[1], pricePerPage, basePrice);
+                alert('Please enter the number of pages manually for non-PDF files.');
+            }
+        }
+
+        const debouncedCalculatePageCount = debounce(calculatePageCount, 300);
+
+        function updatePrice(serviceId, pricePerPage, basePrice = 0) {
+            const pagesInput = document.getElementById(`pages-${serviceId}`);
+            const priceDisplay = document.getElementById(`price-${serviceId}`);
+            const pages = parseInt(pagesInput.value) || 0;
+
+            let totalCost = 0;
+            if (pages > 0) {
+                totalCost = basePrice + (pricePerPage * pages);
+            }
+            priceDisplay.textContent = `Total: ₹${totalCost.toFixed(2)}`;
+        }
+
+        function addToOrder(serviceName, pricePerPage, fileInputId, pagesInputId, basePrice = 0) {
+            const fileInput = document.getElementById(fileInputId);
+            const pagesInput = document.getElementById(pagesInputId);
+            const file = fileInput.files[0];
+            const pages = parseInt(pagesInput.value) || 0;
+
+            if (!file) {
+                alert("Please upload a file first!");
+                return;
+            }
+            if (pages <= 0) {
+                alert("Please enter a valid number!");
+                return;
+            }
+
+            const totalCost = basePrice + (pricePerPage * pages);
+            const order = {
+                id: Date.now(),
+                service: serviceName,
+                fileName: file.name,
+                pages: pages,
+                totalCost: totalCost.toFixed(2),
+                status: "Order Placed"
+            };
+            orders.push(order);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            document.getElementById('order-count').innerText = orders.length;
+            alert(`Order Added!\nService: ${serviceName}\nFile: ${file.name}\nQuantity: ${pages}\nTotal Cost: ₹${totalCost.toFixed(2)}`);
+            fileInput.value = '';
+            pagesInput.value = '';
+            updatePrice(pagesInputId.split('-')[1], pricePerPage, basePrice);
+            location.href = 'cart.html';
+        }
+    </script>
+</body>
+</html>
