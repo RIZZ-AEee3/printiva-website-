@@ -267,12 +267,12 @@
         <div id="service-list">
             <div class="service">
                 <h3>A4 Black & White</h3>
-                <p>₹0.89 per page</p>
+                <p>₹1.50 per page</p> <!-- Changed from ₹0.89 to ₹1.50 -->
                 <p>High-quality laser, 300 DPI</p>
-                <input type="file" id="file-bw" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-bw', 'pages-bw', 0.89)">
-                <input type="number" id="pages-bw" min="1" placeholder="No. of pages" oninput="updatePrice('bw', 0.89)">
+                <input type="file" id="file-bw" accept=".pdf,.doc,.docx" onchange="debouncedCalculatePageCount('file-bw', 'pages-bw', 1.50)"> <!-- Updated price -->
+                <input type="number" id="pages-bw" min="1" placeholder="No. of pages" oninput="updatePrice('bw', 1.50)"> <!-- Updated price -->
                 <p id="price-bw" class="price-display">Total: ₹0.00</p>
-                <button onclick="addToOrder('A4 Black & White', 0.89, 'file-bw', 'pages-bw')">Add to Order</button>
+                <button onclick="addToOrder('A4 Black & White', 1.50, 'file-bw', 'pages-bw')">Add to Order</button> <!-- Updated price -->
             </div>
             <div class="service">
                 <h3>A4 Color</h3>
