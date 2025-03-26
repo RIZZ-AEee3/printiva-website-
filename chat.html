@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRINTIVA - Live Chat</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f7f9fc;
+            color: #333;
+            line-height: 1.6;
+        }
+        :root {
+            --primary: #1e88e5;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --card-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.05);
+            --text: #333;
+            --msg-bg: #f0f2f5;
+            --msg-ai-bg: #e3f2fd;
+        }
+        body.dark {
+            background: #1f2a44;
+            color: #e0e0e0;
+            --card-bg: #2a3b5a;
+            --shadow: rgba(0, 0, 0, 0.2);
+            --text: #e0e0e0;
+            --msg-bg: #3a4b6a;
+            --msg-ai-bg: #4a6b9a;
+        }
+        header {
+            background: var(--primary);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        #logo-container { display: flex; align-items: center; }
+        #logo { width: 180px; height: auto; }
+        #brand-name { color: #fff; font-size: 24px; font-weight: 600; text-transform: uppercase; display: none; }
+        #header-actions { display: flex; align-items: center; gap: 10px; }
+        #order-count { background: #fff; color: var(--primary); padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: 500; }
+        .header-btn, .toggle-btn {
+            background: #fff;
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        .header-btn:hover, .toggle-btn:hover { background: #e3f2fd; }
+        main {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 20px;
+        }
+        #chat-container {
+            flex: 3;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        #chat-header {
+            padding: 15px 25px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #chat-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        #chat-status {
+            font-size: 14px;
+            color: #666;
+        }
+        #chat-messages {
+            list-style: none;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 0;
+        }
+        #chat-messages li {
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin: 8px 0;
+            background: var(--msg-bg);
+            font-size: 15px;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #chat-messages li.ai {
+            background: var(--msg-ai-bg);
+            margin-left: 20px;
+        }
+        #chat-messages li.pinned {
+            border-left: 4px solid var(--primary);
+            background: #e8f0fe;
+        }
+        #chat-messages li:hover .timestamp, #chat-messages li:hover .msg-actions {
+            display: block;
+        }
+        .timestamp {
+            display: none;
+            color: #999;
+            font-size: 12px;
+            position: absolute;
+            bottom: -18px;
+            left: 18px;
+        }
+        .msg-actions {
+            display: none;
+            font-size: 12px;
+        }
+        .msg-actions span {
+            color: var(--primary);
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .msg-actions span:hover { text-decoration: underline; }
+        #typing-indicator {
+            display: none;
+            padding: 12px 18px;
+            color: #666;
+            font-style: italic;
+        }
+        #chat-input-area {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #e0e0e0;
+            gap: 10px;
+        }
+        #chat-input {
+            width: calc(100% - 100px);
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #fafafa;
+        }
+        #chat-input:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+        #send-chat {
+            background: var(--secondary);
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        #send-chat:hover { background: #27ae60; }
+        #quick-replies {
+            padding: 10px 25px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            border-top: 1px solid #e0e0e0;
+        }
+        .quick-btn {
+            background: #e3f2fd;
+            color: var(--primary);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .quick-btn:hover { background: #bbdefb; }
+        #chat-actions {
+            padding: 15px 25px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .action-btn {
+            background: #f0f2f5;
+            color: #333;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .action-btn:hover { background: #e0e0e0; }
+        .action-btn.danger { background: var(--danger); color: #fff; }
+        .action-btn.danger:hover { background: #c0392b; }
+        #sidebar {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px var(--shadow);
+            padding: 20px;
+            display: none;
+        }
+        #sidebar.active { display: block; }
+        #sidebar h3 {
+            font-size: 18px;
+            color: var(--primary);
+            margin: 0 0 15px;
+            font-weight: 600;
+        }
+        .theme-option {
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .theme-option:hover, .theme-option.active { background: #e3f2fd; }
+        nav {
+            background: var(--card-bg);
+            padding: 15px 0;
+            box-shadow: 0 -2px 10px var(--shadow);
+            position: sticky;
+            bottom: 0;
+        }
+        nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        nav a {
+            text-decoration: none;
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        nav a:hover, nav a.active { background: #e3f2fd; color: var(--primary); }
+    </style>
+</head>
+<body>
+    <header>
+        <div id="logo-container">
+            <img id="logo" src="printiva_logo.jpg" alt="PRINTIVA Logo" onerror="this.style.display='none'; document.getElementById('brand-name').style.display='block';">
+            <span id="brand-name">PRINTIVA</span>
+        </div>
+        <div id="header-actions">
+            <span id="order-count">0</span>
+            <a href="account.html" class="header-btn">Account</a>
+            <a href="payment.html" class="header-btn">Payment</a>
+            <a href="chat.html" class="header-btn">Live Chat</a>
+            <span class="toggle-btn" onclick="toggleDarkMode()">Dark Mode</span>
+        </div>
+    </header>
+    <main>
+        <div id="chat-container">
+            <div id="chat-header">
+                <h2>Live Chat</h2>
+                <span id="chat-status">Sire is online</span>
+            </div>
+            <ul id="chat-messages"></ul>
+            <div id="typing-indicator">Sire is typing...</div>
+            <div id="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Type your message..." aria-label="Chat input" onkeydown="if(event.key === 'Enter') sendChat()">
+                <button id="send-chat" onclick="sendChat()">Send</button>
+            </div>
+            <div id="quick-replies">
+                <span class="quick-btn" onclick="quickReply('Hi')">Say Hi</span>
+                <span class="quick-btn" onclick="quickReply('What can you do?')">What Can You Do?</span>
+                <span class="quick-btn" onclick="quickReply('Tell me a joke')">Joke</span>
+                <span class="quick-btn" onclick="quickReply('Problem with upload')">Upload Issue</span>
+                <span class="quick-btn" onclick="quickReply('Can’t find my cart')">Cart Help</span>
+            </div>
+            <div id="chat-actions">
+                <button class="action-btn" onclick="pinLastMessage()">Pin Last Message</button>
+                <button class="action-btn danger" onclick="clearChat()">Clear Chat</button>
+                <button class="action-btn" onclick="toggleSidebar()">Themes</button>
+            </div>
+        </div>
+        <div id="sidebar">
+            <h3>Chat Themes</h3>
+            <div class="theme-option active" onclick="setTheme('default')" data-theme="default">Default</div>
+            <div class="theme-option" onclick="setTheme('dark')" data-theme="dark">Dark</div>
+            <div class="theme-option" onclick="setTheme('green')" data-theme="green">Green</div>
+        </div>
+    </main>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="upload.html">Upload</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="track.html">Track</a></li>
+        </ul>
+    </nav>
+
+    <script>
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        let paymentDetails = JSON.parse(localStorage.getItem('paymentDetails')) || {};
+        let chatMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        let hasGreeted = chatMessages.length > 0;
+        let lastTopic = '';
+        document.getElementById('order-count').innerText = orders.length;
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark');
+            document.querySelector('.toggle-btn').textContent = document.body.classList.contains('dark') ? 'Light Mode' : 'Dark Mode';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+        }
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+            document.querySelector('.toggle-btn').textContent = 'Light Mode';
+        }
+
+        function updateChat() {
+            const chatMessagesList = document.getElementById('chat-messages');
+            chatMessagesList.innerHTML = chatMessages.map(msg => `
+                <li class="${msg.sender === 'AI' ? 'ai' : ''} ${msg.pinned ? 'pinned' : ''}">
+                    <span><strong>${msg.sender}:</strong> ${msg.text}</span>
+                    <div class="msg-actions">
+                        <span onclick="editMessage(${msg.id})">Edit</span>
+                        <span onclick="pinMessage(${msg.id})">${msg.pinned ? 'Unpin' : 'Pin'}</span>
+                    </div>
+                    <span class="timestamp">${msg.timestamp}</span>
+                </li>
+            `).join('');
+            chatMessagesList.scrollTop = chatMessagesList.scrollHeight;
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+            chatMessages.push({ id: Date.now(), text: message, timestamp: new Date().toLocaleString(), sender: 'User', pinned: false });
+            input.value = '';
+            updateChat();
+            document.getElementById('typing-indicator').style.display = 'block';
+
+            setTimeout(() => {
+                document.getElementById('typing-indicator').style.display = 'none';
+                const aiResponse = hasGreeted ? getAIResponse(message) : getGreeting() + " " + getAIResponse(message);
+                chatMessages.push({ id: Date.now(), text: aiResponse, timestamp: new Date().toLocaleString(), sender: 'AI', pinned: false });
+                updateChat();
+                hasGreeted = true;
+                localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+            }, 300); // Faster response time (was 800ms)
+        }
+
+        function quickReply(message) {
+            document.getElementById('chat-input').value = message;
+            sendChat();
+        }
+
+        function getGreeting() {
+            const greetings = [
+                "Hi there! I’m Sire, here to help you out.",
+                "Hello! I’m Sire—good to chat with you.",
+                "Hey! I’m Sire, ready to assist you today."
+            ];
+            return greetings[Math.floor(Math.random() * greetings.length)];
+        }
+
+        function getAIResponse(message) {
+            const lowerMsg = message.toLowerCase();
+            lastTopic = lowerMsg;
+
+            // General Triggers
+            if (lowerMsg.includes('what') && lowerMsg.includes('do')) return "I’m here to chat and help with anything on the Printiva site—like finding pages or fixing issues. What’s up?";
+            if (lowerMsg.includes('hi') || lowerMsg.includes('hello')) return "Hey, good to see you! What can I do for you today?";
+            if (lowerMsg.includes('edit')) return "You can edit your message by clicking ‘Edit’ next to it. Pretty easy, right?";
+            if (lowerMsg.includes('who') && lowerMsg.includes('you')) return "I’m Sire, your assistant for all things Printiva. I know the whole site inside out! Who are you?";
+            if (lowerMsg.includes('how') && lowerMsg.includes('are')) return "I’m doing good, thanks! How about you—how’s your day going?";
+            if (lowerMsg.includes('boring') || lowerMsg.includes('bored')) return "Yeah, I get that. Want to talk about something fun or interesting?";
+            if (lowerMsg.includes('why')) return "Good question! What exactly are you wondering about? I’ll try to help.";
+            if (lowerMsg === 'test') return "Testing me out? Cool, I’m here and working fine. What’s next?";
+            if (lowerMsg.includes('joke')) return "Alright, here’s one: Why don’t skeletons fight each other? They don’t have the guts! How’s that?";
+            if (lowerMsg.includes('thanks') || lowerMsg.includes('thank you')) return "You’re welcome! Glad I could help. Anything else on your mind?";
+            if (lowerMsg.includes('time')) return `It’s ${new Date().toLocaleTimeString()} here. What’s the time where you are?`;
+            if (lowerMsg.includes('weather')) return "I can’t check the weather myself, but tell me your location, and I’ll give you a guess based on what I know!";
+            if (lowerMsg.includes('bye') || lowerMsg.includes('goodbye')) return "See you later! Nice chatting with you. Come back anytime.";
+
+            // Website-Specific Triggers
+            if (lowerMsg.includes('problem') || lowerMsg.includes('issue') || lowerMsg.includes('help')) {
+                if (lowerMsg.includes('upload')) return "Having trouble with the Upload page? Make sure your file’s ready and click ‘Upload’ there. What’s going wrong?";
+                if (lowerMsg.includes('cart')) return "Issues with the Cart page? It’s where you see your orders—check the ‘Cart’ link at the bottom. What’s the problem?";
+                if (lowerMsg.includes('track')) return "Trouble on the Track page? That’s for checking order status—go to ‘Track’ in the navigation. What’s not working?";
+                if (lowerMsg.includes('account')) return "Something off on the Account page? It’s for your profile—click ‘Account’ up top. What’s the issue?";
+                if (lowerMsg.includes('payment')) return "Payment page giving you trouble? It’s where you manage payments—hit ‘Payment’ in the header. What’s happening?";
+                if (lowerMsg.includes('home') || lowerMsg.includes('index')) return "Problem on the Home page? That’s the main landing spot—click ‘Home’ below. What’s up there?";
+                if (lowerMsg.includes('chat')) return "Issues here in the chat? I’m right here—tell me what’s not working, and I’ll fix it!";
+                return "Sounds like something’s up! Tell me which part of the site you’re on, and I’ll help you out.";
+            }
+            if (lowerMsg.includes('where') || lowerMsg.includes('find')) {
+                if (lowerMsg.includes('upload')) return "The Upload page is for sending files—look for ‘Upload’ in the bottom navigation. Need help with it?";
+                if (lowerMsg.includes('cart')) return "Your cart’s on the Cart page—just click ‘Cart’ at the bottom. Can’t see it?";
+                if (lowerMsg.includes('track')) return "Tracking’s on the Track page—find it in the navigation below. What are you looking for there?";
+                if (lowerMsg.includes('account')) return "Your account stuff is on the Account page—check the ‘Account’ link up top. Lost it?";
+                if (lowerMsg.includes('payment')) return "Payments are handled on the Payment page—see ‘Payment’ in the header. Need directions?";
+                if (lowerMsg.includes('home')) return "The Home page is the main one—click ‘Home’ in the nav at the bottom. Looking for something specific?";
+                return "Where are you trying to go? I know the whole site—tell me what you need to find!";
+            }
+
+            // Contextual Follow-Ups
+            if (lastTopic.includes('edit') && !lowerMsg.includes('edit')) return "Still thinking about editing? You can do that anytime—or we can move on. What’s up?";
+            if (lastTopic.includes('hi') && !lowerMsg.includes('hi')) return "So, now that we’ve said hi, what’s on your mind?";
+            if (lastTopic.includes('joke') && !lowerMsg.includes('joke')) return "Did that joke land okay? Want another one or something else?";
+            if (lastTopic.includes('problem') && !lowerMsg.includes('problem')) return "Still working on that issue? Tell me more, or we can switch gears.";
+            if (lastTopic.includes('where') && !lowerMsg.includes('where')) return "Found what you were looking for? If not, just say where you’re stuck!";
+            if (lastTopic && !lowerMsg.includes(lastTopic.split(' ')[0])) return `We were talking about "${lastTopic.split(' ')[0]}" before. Want to keep going or switch it up?`;
+
+            // Normal, Human-like Fallbacks
+            const randomReplies = [
+                "Hey, I’m here—let me know what you want to talk about!",
+                "Not sure what to say? Just tell me what’s up.",
+                "I’m listening—what’s on your mind?",
+                "Hey, no worries, just chat with me about anything!",
+                "What’s going on? I’m here to help out."
+            ];
+            return randomReplies[Math.floor(Math.random() * randomReplies.length)];
+        }
+
+        function editMessage(id) {
+            const msg = chatMessages.find(m => m.id === id);
+            if (msg && msg.sender === 'User') {
+                const newText = prompt("Edit your message:", msg.text);
+                if (newText) {
+                    msg.text = newText;
+                    msg.timestamp = new Date().toLocaleString();
+                    updateChat();
+                    localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+                }
+            } else if (msg) {
+                alert("You can only edit your own messages!");
+            }
+        }
+
+        function pinMessage(id) {
+            const msg = chatMessages.find(m => m.id === id);
+            if (msg) {
+                msg.pinned = !msg.pinned;
+                updateChat();
+                localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+            }
+        }
+
+        function pinLastMessage() {
+            if (chatMessages.length === 0) return alert("No messages to pin!");
+            pinMessage(chatMessages[chatMessages.length - 1].id);
+        }
+
+        function clearChat() {
+            chatMessages = [];
+            hasGreeted = false;
+            localStorage.setItem('chatMessages', JSON.stringify(chatMessages));
+            updateChat();
+            document.getElementById('chat-status').innerText = "Sire is online";
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('active');
+        }
+
+        function setTheme(theme) {
+            document.body.classList.remove('dark', 'green');
+            document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+            if (theme === 'dark') {
+                document.body.classList.add('dark');
+                localStorage.setItem('darkMode', 'true');
+            } else if (theme === 'green') {
+                document.body.style.setProperty('--primary', '#27ae60');
+                document.body.style.setProperty('--secondary', '#1e88e5');
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                localStorage.setItem('darkMode', 'false');
+            }
+            document.querySelector(`[data-theme="${theme}"]`).classList.add('active');
+        }
+
+        if (!hasGreeted && chatMessages.length === 0) {
+            setTimeout(() => {
+                chatMessages.push({ id: Date.now(), text: getGreeting() + " What can I help you with?", timestamp: new Date().toLocaleString(), sender: 'AI', pinned: false });
+                updateChat();
+                hasGreeted = true;
+            }, 1000);
+        } else {
+            updateChat();
+        }
+    </script>
+</body>
+</html>

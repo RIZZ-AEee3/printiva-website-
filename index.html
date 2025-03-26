@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRINTIVA - Home</title>
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Vanta.js Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            position: relative;
+        }
+        :root {
+            --text: #2c3e50;
+            --card-bg: rgba(255, 255, 255, 0.99);
+            --shadow: rgba(0, 0, 0, 0.25);
+            --primary: #0277bd;
+            --primary-hover: #01579b;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --msg-bg: rgba(245, 247, 250, 0.99);
+            --accent: #026aa7; /* Updated to match the WAVES color 0x026aa7 */
+        }
+        body.dark { 
+            --text: #f5f5f5;
+            --card-bg: rgba(52, 73, 94, 0.98);
+            --shadow: rgba(0, 0, 0, 0.4);
+            --msg-bg: rgba(62, 92, 118, 0.98);
+            --accent: #026aa7; /* Updated to match the WAVES color 0x026aa7 */
+        }
+        #vanta-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            filter: blur(2px);
+            opacity: 0.75;
+        }
+        body.dark #vanta-bg {
+            filter: blur(3px);
+            opacity: 0.7;
+        }
+        main, header, nav {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        body.dark main, body.dark header, body.dark nav {
+            background: rgba(44, 62, 80, 0.95);
+        }
+        header {
+            background: linear-gradient(90deg, var(--primary), #42a5f5);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--accent);
+        }
+        #logo-container { display: flex; align-items: center; }
+        #logo { width: 220px; height: auto; margin-right: 25px; transition: transform 0.3s ease; }
+        #logo:hover { transform: scale(1.05); }
+        #brand-name { color: white; font-size: 30px; font-weight: 700; text-transform: uppercase; display: none; }
+        #header-actions { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        #order-count { 
+            background: var(--card-bg); 
+            color: var(--primary); 
+            padding: 8px 18px; 
+            border-radius: 20px; 
+            font-weight: 500; 
+            box-shadow: 0 3px 6px var(--shadow);
+        }
+        .header-btn, .toggle-btn { 
+            background: var(--card-bg); 
+            color: var(--primary); 
+            padding: 10px 25px; 
+            border-radius: 25px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 3px 6px var(--shadow);
+            border: 1px solid var(--accent);
+        }
+        .header-btn:hover, .toggle-btn:hover { 
+            background: var(--accent); 
+            color: white; 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 12px var(--shadow);
+        }
+        main { max-width: 1400px; margin: 40px auto; padding: 20px; border-radius: 15px; }
+        h1 { 
+            text-align: center; 
+            color: var(--primary); 
+            font-size: 48px; 
+            font-weight: 700; 
+            margin: 30px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 2px 2px 4px var(--shadow);
+        }
+        #hero { 
+            position: relative; 
+            background: var(--card-bg); 
+            border-radius: 20px; 
+            padding: 40px; 
+            text-align: center; 
+            box-shadow: 0 8px 24px var(--shadow);
+            margin-bottom: 40px; 
+            transition: all 0.3s ease; 
+            border: 2px solid var(--accent);
+        }
+        body.dark #hero {
+            background: linear-gradient(145deg, rgba(52, 73, 94, 0.98), rgba(44, 62, 80, 0.98));
+        }
+        #hero p { font-size: 20px; color: var(--text); margin: 20px 0; }
+        #cta-btn { 
+            background: var(--primary); 
+            color: white; 
+            padding: 15px 40px; 
+            border-radius: 25px; 
+            font-size: 18px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            border: none; 
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        #cta-btn:hover { 
+            background: var(--accent); 
+            transform: translateY(-2px); 
+            box-shadow: 0 8px 16px var(--shadow);
+        }
+        #features { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 30px; 
+            margin: 40px 0; 
+        }
+        .feature-card { 
+            background: var(--card-bg); 
+            border-radius: 15px; 
+            padding: 30px; 
+            text-align: center; 
+            box-shadow: 0 6px 20px var(--shadow);
+            transition: all 0.3s ease; 
+            border: 1px solid var(--accent);
+        }
+        body.dark .feature-card {
+            background: linear-gradient(145deg, rgba(52, 73, 94, 0.98), rgba(44, 62, 80, 0.98));
+        }
+        .feature-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 30px var(--shadow);
+            border-color: var(--primary);
+        }
+        .feature-card h3 { color: var(--primary); font-size: 24px; margin: 15px 0; }
+        .feature-card p { color: var(--text); font-size: 16px; }
+        #testimonials { margin: 40px 0; }
+        #testimonials h2 { 
+            text-align: center; 
+            color: var(--primary); 
+            font-size: 36px; 
+            font-weight: 700; 
+            margin-bottom: 30px; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 2px 2px 4px var(--shadow);
+        }
+        .testimonial { 
+            background: var(--msg-bg); 
+            border-radius: 12px; 
+            padding: 25px; 
+            margin: 20px 0; 
+            box-shadow: 0 4px 12px var(--shadow);
+            position: relative; 
+            transition: all 0.3s ease; 
+            border-left: 4px solid var(--accent);
+        }
+        body.dark .testimonial {
+            background: linear-gradient(145deg, rgba(62, 92, 118, 0.98), rgba(44, 62, 80, 0.98));
+        }
+        .testimonial:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 8px 20px var(--shadow);
+            border-left-color: var(--primary);
+        }
+        .testimonial p { font-size: 16px; color: var(--text); margin: 0 0 15px; }
+        .testimonial .author { font-weight: 500; color: var(--primary); text-align: right; font-style: italic; }
+        nav { 
+            position: sticky; 
+            bottom: 0; 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px); 
+            box-shadow: 0 -2px 10px var(--shadow); 
+            z-index: 10; 
+            border-top: 2px solid var(--accent); 
+        }
+        body.dark nav { background: rgba(44, 62, 80, 0.95); }
+        nav ul { 
+            display: flex; 
+            justify-content: center; 
+            list-style: none; 
+            padding: 15px 0; 
+            margin: 0; 
+        }
+        nav a { 
+            text-decoration: none; 
+            color: var(--text); 
+            font-weight: 500; 
+            padding: 12px 25px; 
+            border-radius: 20px; 
+            transition: all 0.3s ease; 
+        }
+        nav a:hover, nav a.active { 
+            background: var(--accent); 
+            color: white; 
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; padding: 15px; }
+            #logo { width: 180px; }
+            #header-actions { margin-top: 15px; gap: 10px; justify-content: center; }
+            h1 { font-size: 36px; }
+            #hero { padding: 25px; }
+            #hero p { font-size: 18px; }
+            #features { grid-template-columns: 1fr; }
+            nav ul { flex-direction: column; text-align: center; }
+            nav a { display: block; margin: 5px 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Container for the Vanta effect -->
+    <div id="vanta-bg"></div>
+
+    <header>
+        <div id="logo-container">
+            <img id="logo" src="printiva_logo.jpg" alt="PRINTIVA Logo" onerror="this.style.display='none'; document.getElementById('brand-name').style.display='block';">
+            <span id="brand-name">PRINTIVA</span>
+        </div>
+        <div id="header-actions">
+            <span id="order-count">0</span>
+            <span class="header-btn" onclick="location.href='account.html'">Account</span>
+            <span class="header-btn" onclick="location.href='payment.html'">Payment</span>
+            <span class="header-btn" onclick="location.href='chat.html'">Live Chat</span>
+            <span class="header-btn toggle-btn" onclick="toggleDarkMode()">Dark Mode</span>
+        </div>
+    </header>
+    <main>
+        <h1>Welcome to PRINTIVA</h1>
+        <section id="hero">
+            <p>Your one-stop solution for all printing needs. From documents to posters, we deliver quality with speed.</p>
+            <button id="cta-btn" onclick="location.href='upload.html'">Get Started</button>
+        </section>
+        <section id="features">
+            <div class="feature-card">
+                <h3>Fast Delivery</h3>
+                <p>Get your prints delivered to your doorstep in record time.</p>
+            </div>
+            <div class="feature-card">
+                <h3>High Quality</h3>
+                <p>State-of-the-art printing technology for crisp, vibrant results.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Affordable Pricing</h3>
+                <p>Competitive rates without compromising on quality.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Easy Upload</h3>
+                <p>Upload your files seamlessly and track your order with ease.</p>
+            </div>
+        </section>
+        <section id="testimonials">
+            <h2>What Our Customers Say</h2>
+            <div class="testimonial">
+                <p>"PRINTIVA made printing my thesis a breeze! The quality was top-notch, and the delivery was super fast."</p>
+                <p class="author">- Priya S.</p>
+            </div>
+            <div class="testimonial">
+                <p>"I ordered business cards, and they turned out amazing. Affordable and professional service!"</p>
+                <p class="author">- Arjun M.</p>
+            </div>
+            <div class="testimonial">
+                <p>"The live chat support was incredibly helpful. My posters were perfect, thanks to PRINTIVA!"</p>
+                <p class="author">- Sneha R.</p>
+            </div>
+        </section>
+    </main>
+    <nav>
+        <ul>
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="upload.html">Upload</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="track.html">Track</a></li>
+        </ul>
+    </nav>
+
+    <script>
+        let vantaEffect;
+
+        // Function to initialize or update the Vanta WAVES effect
+        function initializeVanta() {
+            if (vantaEffect) {
+                console.log('Destroying previous Vanta effect...');
+                vantaEffect.destroy();
+                vantaEffect = null;
+            }
+
+            if (typeof VANTA === 'undefined') {
+                console.error('Vanta.js is not loaded. Please check the CDN links.');
+                return;
+            }
+
+            const isDarkMode = document.body.classList.contains('dark');
+            console.log('Initializing Vanta WAVES effect for', isDarkMode ? 'dark mode' : 'light mode');
+            try {
+                vantaEffect = VANTA.WAVES({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: true,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: 0x026aa7, // Reverted to the requested blue color
+                    shininess: 30.00,
+                    waveHeight: 15.00,
+                    waveSpeed: 1.00,
+                    zoom: 1.00,
+                    mouseEase: true
+                });
+                console.log('Vanta WAVES effect initialized successfully:', vantaEffect);
+            } catch (error) {
+                console.error('Error initializing Vanta WAVES effect:', error);
+            }
+        }
+
+        // Initialize Vanta effect after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded, initializing Vanta effect...');
+            initializeVanta();
+        });
+
+        // Update Vanta effect when toggling dark mode with a longer delay
+        function toggleDarkMode() { 
+            document.body.classList.toggle('dark'); 
+            const btn = document.querySelector('.toggle-btn');
+            btn.textContent = document.body.classList.contains('dark') ? 'Light Mode' : 'Dark Mode';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+            console.log('Toggling mode to', document.body.classList.contains('dark') ? 'dark' : 'light');
+            setTimeout(() => {
+                initializeVanta();
+            }, 300);
+        }
+
+        // Load orders and dark mode state
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        document.getElementById('order-count').innerText = orders.length;
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+            document.querySelector('.toggle-btn').textContent = 'Light Mode';
+            setTimeout(() => {
+                initializeVanta();
+            }, 300);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRINTIVA - Track</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <!-- Google Fonts: Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Preload Assets -->
+    <link rel="preload" href="https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png" as="image">
+    <!-- Vanta.js Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: var(--text);
+            overflow-x: hidden;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+            position: relative;
+        }
+        :root {
+            --text: #2c3e50;
+            --card-bg: white;
+            --shadow: rgba(0,0,0,0.1);
+            --primary: #026aa7;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --msg-bg: #f5f7fa;
+            --accent: #026aa7;
+        }
+        body.dark { 
+            --text: #e9ecef; 
+            --card-bg: #34495e; 
+            --shadow: rgba(0,0,0,0.2); 
+            --msg-bg: #3e5c76; 
+            --accent: #026aa7;
+        }
+        #vanta-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            filter: blur(2px);
+            opacity: 0.75;
+        }
+        body.dark #vanta-bg {
+            filter: blur(3px);
+            opacity: 0.7;
+        }
+        main, header, nav {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        body.dark main, body.dark header, body.dark nav {
+            background: rgba(44, 62, 80, 0.95);
+        }
+        header {
+            background: linear-gradient(90deg, var(--primary), #42a5f5);
+            padding: 20px 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 12px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 2px solid var(--accent);
+        }
+        #logo-container { display: flex; align-items: center; }
+        #logo { width: 220px; height: auto; margin-right: 25px; transition: transform 0.3s ease; }
+        #logo:hover { transform: scale(1.05); }
+        #brand-name { color: white; font-size: 30px; font-weight: 700; text-transform: uppercase; display: none; }
+        #header-actions { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        #order-count, #points { 
+            background: white; 
+            color: var(--primary); 
+            padding: 8px 18px; 
+            border-radius: 20px; 
+            font-weight: 500; 
+            box-shadow: 0 2px 4px var(--shadow);
+        }
+        .header-btn, .toggle-btn { 
+            background: white; 
+            color: var(--primary); 
+            padding: 10px 25px; 
+            border-radius: 25px; 
+            font-weight: 500; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 2px 4px var(--shadow);
+            border: 1px solid var(--accent);
+        }
+        .header-btn:hover, .toggle-btn:hover { 
+            background: var(--accent); 
+            color: white; 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        main { max-width: 1400px; margin: 40px auto; padding: 0 20px; border-radius: 15px; }
+        h2 { 
+            text-align: center; 
+            color: var(--primary); 
+            font-size: 36px; 
+            font-weight: 700; 
+            margin: 30px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 2px; 
+            text-shadow: 2px 2px 4px var(--shadow);
+        }
+        #tracking-section { 
+            padding: 40px; 
+            background: var(--card-bg); 
+            border-radius: 20px; 
+            box-shadow: 0 6px 20px var(--shadow); 
+            transition: all 0.3s ease; 
+            position: relative; 
+            border: 2px solid var(--accent);
+        }
+        body.dark #tracking-section {
+            background: linear-gradient(145deg, rgba(52, 73, 94, 0.98), rgba(44, 62, 80, 0.98));
+        }
+        #city-tabs { 
+            display: flex; 
+            gap: 15px; 
+            margin-bottom: 25px; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+        }
+        .city-tab { 
+            padding: 12px 25px; 
+            background: var(--msg-bg); 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-weight: 500; 
+            color: var(--text); 
+            transition: all 0.3s ease; 
+            box-shadow: 0 2px 4px var(--shadow); 
+            border: 1px solid var(--accent);
+        }
+        .city-tab.active { 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 4px 8px var(--shadow); 
+        }
+        .city-tab:hover, .city-tab:focus { 
+            background: var(--accent); 
+            color: white; 
+            transform: translateY(-2px); 
+        }
+        #map-container { position: relative; }
+        #map { 
+            width: 100%; 
+            height: 480px; 
+            border-radius: 15px; 
+            margin: 25px 0; 
+            border: 2px solid var(--primary); 
+            background: #f0f4f8; 
+            box-shadow: 0 4px 12px var(--shadow); 
+            position: relative; 
+            z-index: 2;
+        }
+        #tracking-info { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 10px; 
+            margin: 20px 0; 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 10px var(--shadow); 
+            border: 1px solid var(--accent);
+        }
+        body.dark #tracking-info {
+            background: linear-gradient(145deg, rgba(62, 92, 118, 0.98), rgba(44, 62, 80, 0.98));
+        }
+        #distance-info, #eta-info, #time-window { 
+            font-size: 18px; 
+            font-weight: 500; 
+            color: var(--primary); 
+        }
+        #tracking-list .order-card { 
+            padding: 15px 20px; 
+            border-radius: 12px; 
+            margin: 10px 0; 
+            background: var(--msg-bg); 
+            box-shadow: 0 2px 6px var(--shadow); 
+            cursor: pointer; 
+            position: relative; 
+            transition: all 0.3s ease; 
+            border-left: 4px solid var(--accent);
+        }
+        body.dark #tracking-list .order-card {
+            background: linear-gradient(145deg, rgba(62, 92, 118, 0.98), rgba(44, 62, 80, 0.98));
+        }
+        #tracking-list .order-card:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 10px var(--shadow); 
+            border-left-color: var(--primary);
+        }
+        #tracking-list .order-card.priority::after { 
+            content: 'Urgent'; 
+            background: var(--danger); 
+            color: white; 
+            padding: 4px 10px; 
+            border-radius: 15px; 
+            font-size: 13px; 
+            position: absolute; 
+            right: 15px; 
+            top: 15px; 
+        }
+        #timeline { 
+            margin-top: 25px; 
+            padding: 0 25px; 
+        }
+        .timeline-item { 
+            display: flex; 
+            align-items: center; 
+            margin: 20px 0; 
+            position: relative; 
+        }
+        .timeline-item::before { 
+            content: ''; 
+            width: 12px; 
+            height: 12px; 
+            background: var(--primary); 
+            border-radius: 50%; 
+            margin-right: 15px; 
+        }
+        .timeline-item.completed::before { 
+            background: var(--success); 
+        }
+        .timeline-item::after { 
+            content: ''; 
+            position: absolute; 
+            left: 5px; 
+            top: 25px; 
+            height: calc(100% - 25px); 
+            width: 2px; 
+            background: var(--primary); 
+        }
+        .timeline-item:last-child::after { 
+            display: none; 
+        }
+        #controls { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 15px; 
+            margin-bottom: 25px; 
+        }
+        #avatar-select, #language-select { 
+            padding: 8px; 
+            border-radius: 8px; 
+            border: 1px solid var(--primary); 
+        }
+        #map-controls { 
+            position: absolute; 
+            top: 70px; 
+            right: 15px; 
+            z-index: 1000; 
+            display: flex; 
+            gap: 10px; 
+        }
+        .map-btn { 
+            padding: 8px 15px; 
+            background: var(--primary); 
+            color: white; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+        }
+        .map-btn:hover { 
+            background: #42a5f5; 
+            transform: translateY(-2px); 
+        }
+        #weather-overlay { 
+            position: absolute; 
+            top: 15px; 
+            left: 15px; 
+            z-index: 1000; 
+            font-size: 24px; 
+        }
+        #history { 
+            margin-top: 30px; 
+        }
+        #fab { 
+            position: fixed; 
+            bottom: 25px; 
+            right: 25px; 
+            width: 60px; 
+            height: 60px; 
+            background: var(--primary); 
+            color: white; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 28px; 
+            cursor: pointer; 
+            z-index: 1002; 
+            box-shadow: 0 4px 12px var(--shadow); 
+            transition: all 0.3s ease; 
+        }
+        #fab:hover { 
+            transform: scale(1.1); 
+            background: #42a5f5; 
+        }
+        #fab::after { 
+            content: 'Actions'; 
+            position: absolute; 
+            bottom: 70px; 
+            right: 0; 
+            background: rgba(0,0,0,0.8); 
+            color: white; 
+            padding: 5px 10px; 
+            border-radius: 5px; 
+            font-size: 14px; 
+            opacity: 0; 
+            transition: opacity 0.3s ease; 
+            pointer-events: none; 
+        }
+        #fab:hover::after { 
+            opacity: 1; 
+        }
+        #particles { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            pointer-events: none; 
+            z-index: 1001; 
+        }
+        .particle { 
+            position: absolute; 
+            width: 6px; 
+            height: 6px; 
+            background: yellow; 
+            border-radius: 50%; 
+            animation: float 3s infinite; 
+        }
+        @keyframes float { 
+            0% { transform: translateY(0); opacity: 1; } 
+            100% { transform: translateY(-100px); opacity: 0; } 
+        }
+        nav { 
+            position: sticky; 
+            bottom: 0; 
+            background: rgba(255, 255, 255, 0.9); 
+            backdrop-filter: blur(10px); 
+            box-shadow: 0 -2px 10px var(--shadow); 
+            z-index: 10; 
+            border-top: 2px solid var(--accent); 
+        }
+        body.dark nav { 
+            background: rgba(44, 62, 80, 0.95); 
+        }
+        nav ul { 
+            display: flex; 
+            justify-content: center; 
+            list-style: none; 
+            padding: 15px 0; 
+            margin: 0; 
+        }
+        nav a { 
+            text-decoration: none; 
+            color: var(--text); 
+            font-weight: 500; 
+            padding: 12px 25px; 
+            border-radius: 20px; 
+            transition: all 0.3s ease; 
+        }
+        nav a:hover, nav a.active { 
+            background: var(--accent); 
+            color: white; 
+        }
+        .pulse { 
+            animation: pulse 1.5s infinite; 
+        }
+        @keyframes pulse { 
+            0% { transform: scale(1); } 
+            50% { transform: scale(1.1); } 
+            100% { transform: scale(1); } 
+        }
+        @media (max-width: 768px) {
+            header { flex-direction: column; padding: 15px; }
+            #logo { width: 180px; }
+            #header-actions { margin-top: 15px; gap: 10px; justify-content: center; }
+            #map { height: 350px; }
+            #tracking-section { padding: 25px; }
+            h2 { font-size: 28px; }
+            #tracking-info { margin: 15px 0; }
+            #controls { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Container for the Vanta GLOBE effect -->
+    <div id="vanta-bg"></div>
+
+    <header>
+        <div id="logo-container">
+            <img id="logo" src="printiva_logo.jpg" alt="PRINTIVA Logo" onerror="this.style.display='none'; document.getElementById('brand-name').style.display='block';">
+            <span id="brand-name">PRINTIVA</span>
+        </div>
+        <div id="header-actions">
+            <span id="order-count">0</span>
+            <span id="points">0 Points</span>
+            <span class="header-btn" onclick="location.href='account.html'">Account</span>
+            <span class="header-btn" onclick="location.href='payment.html'">Payment</span>
+            <span class="header-btn" onclick="location.href='chat.html'">Live Chat</span>
+            <span class="toggle-btn" onclick="toggleDarkMode()">Dark Mode</span>
+        </div>
+    </header>
+    <main>
+        <h2 id="track-title">Track Your Package</h2>
+        <div id="tracking-section">
+            <div id="controls">
+                <input type="text" id="address-input" placeholder="Enter Delivery Address" aria-label="Delivery Address">
+                <button onclick="setCustomAddress()">Set Address</button>
+                <select id="avatar-select" aria-label="Select Avatar">
+                    <option value="blue-dot">Blue Dot</option>
+                    <option value="bike">Bike</option>
+                    <option value="car">Car</option>
+                </select>
+                <select id="language-select" aria-label="Select Language">
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                </select>
+            </div>
+            <div id="city-tabs" role="tablist">
+                <div class="city-tab active" onclick="switchCity('delhi')" tabindex="0" role="tab" aria-label="Track in Delhi">Delhi</div>
+                <div class="city-tab" onclick="switchCity('mumbai')" tabindex="0" role="tab" aria-label="Track in Mumbai">Mumbai</div>
+                <div class="city-tab" onclick="switchCity('pune')" tabindex="0" role="tab" aria-label="Track in Pune">Pune</div>
+                <div class="city-tab" onclick="switchCity('bengaluru')" tabindex="0" role="tab" aria-label="Track in Bengaluru">Bengaluru</div>
+                <div class="city-tab" onclick="switchCity('kolkata')" tabindex="0" role="tab" aria-label="Track in Kolkata">Kolkata</div>
+            </div>
+            <div id="map-container">
+                <div id="map"></div>
+                <div id="map-controls">
+                    <div class="map-btn" onclick="zoomToDriver()">Zoom to Driver</div>
+                    <div class="map-btn" onclick="showFullRoute()">Show Route</div>
+                    <div class="map-btn" onclick="replayRoute()">Replay</div>
+                </div>
+                <div id="weather-overlay">☀️</div>
+                <div id="particles"></div>
+            </div>
+            <ul id="tracking-list"></ul>
+            <div id="timeline"></div>
+            <div id="tracking-info">
+                <div id="distance-info"></div>
+                <div id="eta-info"></div>
+                <div id="time-window"></div>
+                <button onclick="shareProgress()">Share</button>
+                <button onclick="cancelOrder()">Cancel</button>
+                <div id="tracking-link"></div>
+            </div>
+            <div id="history"></div>
+        </div>
+    </main>
+    <div id="fab" onclick="fabActions()">+</div>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="upload.html">Upload</a></li>
+            <li><a href="cart.html">Cart</a></li>
+            <li><a href="track.html" class="active">Track</a></li>
+        </ul>
+    </nav>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        let vantaEffect;
+
+        // Function to initialize or update the Vanta GLOBE effect
+        function initializeVanta() {
+            if (vantaEffect) {
+                console.log('Destroying previous Vanta effect...');
+                vantaEffect.destroy();
+                vantaEffect = null;
+            }
+
+            if (typeof VANTA === 'undefined') {
+                console.error('Vanta.js is not loaded. Please check the CDN links.');
+                return;
+            }
+
+            const isDarkMode = document.body.classList.contains('dark');
+            console.log('Initializing Vanta GLOBE effect for', isDarkMode ? 'dark mode' : 'light mode');
+            try {
+                vantaEffect = VANTA.GLOBE({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: false,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: 0x026aa7,
+                    color2: 0x42a5f5,
+                    size: 1.0,
+                    backgroundColor: isDarkMode ? 0x1c2526 : 0xe1f5fe
+                });
+                console.log('Vanta GLOBE effect initialized successfully:', vantaEffect);
+            } catch (error) {
+                console.error('Error initializing Vanta GLOBE effect:', error);
+            }
+        }
+
+        // Initialize Vanta effect after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded, initializing Vanta effect...');
+            initializeVanta();
+        });
+
+        // Update Vanta effect when toggling dark mode
+        function toggleDarkMode() { 
+            document.body.classList.toggle('dark'); 
+            const btn = document.querySelector('.toggle-btn');
+            btn.textContent = document.body.classList.contains('dark') ? 'Light Mode' : 'Dark Mode';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark'));
+            console.log('Toggling mode to', document.body.classList.contains('dark') ? 'dark' : 'light');
+            setTimeout(() => {
+                initializeVanta();
+            }, 300);
+        }
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark');
+            document.querySelector('.toggle-btn').textContent = 'Light Mode';
+            setTimeout(() => {
+                initializeVanta();
+            }, 300);
+        }
+
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+        let trackingOrders = JSON.parse(localStorage.getItem('trackingOrders')) || [];
+        let history = JSON.parse(localStorage.getItem('deliveryHistory')) || [];
+        let points = parseInt(localStorage.getItem('points')) || 0;
+        let routeHistory = [];
+        document.getElementById('order-count').innerText = orders.length;
+        document.getElementById('points').innerText = `${points} Points`;
+
+        let map = null, deliveryMarker = null, destinationMarker = null, routePolyline = null;
+        const delhiBounds = [[28.7041 - 0.3, 77.1025 - 0.3], [28.7041 + 0.3, 77.1025 + 0.3]];
+        const mumbaiBounds = [[19.0760 - 0.3, 72.8777 - 0.3], [19.0760 + 0.3, 72.8777 + 0.3]];
+        const puneBounds = [[18.5204 - 0.3, 73.8567 - 0.3], [18.5204 + 0.3, 73.8567 + 0.3]];
+        const bengaluruBounds = [[12.9716 - 0.3, 77.5946 - 0.3], [12.9716 + 0.3, 77.5946 + 0.3]];
+        const kolkataBounds = [[22.5726 - 0.3, 88.3639 - 0.3], [22.5726 + 0.3, 88.3639 + 0.3]];
+        let currentCity = 'delhi', deliveryPosition = null, customDest = null, speed = 30, avatar = 'blue-dot';
+        const trackingData = {
+            delhi: { start: { lat: 28.65, lng: 77.05 }, destination: { lat: 28.7041, lng: 77.1025, name: "India Gate, Delhi" } },
+            mumbai: { start: { lat: 19.03, lng: 72.85 }, destination: { lat: 19.0760, lng: 72.8777, name: "Gateway of India, Mumbai" } },
+            pune: { start: { lat: 18.48, lng: 73.80 }, destination: { lat: 18.5204, lng: 73.8567, name: "Shaniwar Wada, Pune" } },
+            bengaluru: { start: { lat: 12.93, lng: 77.55 }, destination: { lat: 12.9716, lng: 77.5946, name: "Lalbagh, Bengaluru" } },
+            kolkata: { start: { lat: 22.53, lng: 88.32 }, destination: { lat: 22.5726, lng: 88.3639, name: "Victoria Memorial, Kolkata" } }
+        };
+        const avatars = {
+            'blue-dot': L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+                iconSize: [38, 38],
+                iconAnchor: [19, 38],
+                popupAnchor: [0, -38],
+                className: 'pulse'
+            }),
+            'bike': L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/2906/2906887.png',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            }),
+            'car': L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/3202/3202259.png',
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            })
+        };
+        const translations = {
+            en: { title: "Track Your Package", address: "Enter Delivery Address" },
+            hi: { title: "अपने पैकेज को ट्रैक करें", address: "डिलीवरी पता दर्ज करें" }
+        };
+
+        function initMap(city) {
+            if (map) map.remove();
+            currentCity = city;
+            const cityCenters = {
+                delhi: [28.7041, 77.1025],
+                mumbai: [19.0760, 72.8777],
+                pune: [18.5204, 73.8567],
+                bengaluru: [12.9716, 77.5946],
+                kolkata: [22.5726, 88.3639]
+            };
+            const cityBounds = {
+                delhi: delhiBounds,
+                mumbai: mumbaiBounds,
+                pune: puneBounds,
+                bengaluru: bengaluruBounds,
+                kolkata: kolkataBounds
+            };
+            const center = cityCenters[city];
+            const bounds = cityBounds[city];
+            deliveryPosition = { ...trackingData[city].start };
+            routeHistory = [deliveryPosition];
+
+            try {
+                map = L.map('map', { 
+                    center, 
+                    zoom: 13, 
+                    minZoom: 13, 
+                    maxZoom: 16, 
+                    maxBounds: bounds, 
+                    maxBoundsViscosity: 0.8, 
+                    dragging: true, 
+                    scrollWheelZoom: true, 
+                    touchZoom: true, 
+                    doubleClickZoom: true, 
+                    boxZoom: true, 
+                    tap: true 
+                });
+                L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', { 
+                    attribution: '© <a href="https://stadiamaps.com/">Stadia Maps</a>', 
+                    maxZoom: 16 
+                }).addTo(map);
+            } catch (e) {
+                document.getElementById('map').innerHTML = '<p>Map unavailable. Tracking via text: <span id="text-track"></span></p>';
+            }
+            updateTrackingSection(city);
+            document.querySelectorAll('.city-tab').forEach(tab => tab.classList.toggle('active', tab.textContent.toLowerCase() === city));
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        function showNotification(message) {
+            if (Notification.permission === 'granted') new Notification('Printiva Delivery', { body: message });
+            else if (Notification.permission !== 'denied') Notification.requestPermission().then(p => { if (p === 'granted') new Notification('Printiva Delivery', { body: message }); });
+        }
+
+        function updateTimeline(distance) {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+            const stages = [
+                { status: 'Order Placed', time: new Date().toLocaleTimeString(), completed: true },
+                { status: 'Picked Up', time: new Date().toLocaleTimeString(), completed: distance < 5 },
+                { status: 'Out for Delivery', time: new Date().toLocaleTimeString(), completed: distance < 3 },
+                { status: 'Delivered', time: null, completed: distance < 0.1 }
+            ];
+            stages.forEach(stage => {
+                const div = document.createElement('div');
+                div.className = `timeline-item ${stage.completed ? 'completed' : ''}`;
+                div.innerHTML = `<span>${stage.status}</span> ${stage.time ? `- ${stage.time}` : ''}`;
+                timeline.appendChild(div);
+            });
+        }
+
+        function updateHistory() {
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = '<h3>Past Deliveries</h3>' + history.map(h => `<p>${h.order} - ${h.status} on ${h.date}</p>`).join('');
+        }
+
+        function updateTrackingSection(city) {
+            const trackingList = document.getElementById('tracking-list');
+            const distanceInfo = document.getElementById('distance-info');
+            const etaInfo = document.getElementById('eta-info');
+            const timeWindow = document.getElementById('time-window');
+            const trackingLink = document.getElementById('tracking-link');
+            const textTrack = document.getElementById('text-track');
+            const particles = document.getElementById('particles');
+            trackingList.innerHTML = '';
+
+            const dest = customDest || (trackingOrders.length > 0 ? { lat: trackingOrders[0].tracking.lat, lng: trackingOrders[0].tracking.lng, name: `Order #${trackingOrders[0].id} Destination` } : trackingData[city].destination);
+            if (destinationMarker) destinationMarker.remove();
+            if (map) destinationMarker = L.marker([dest.lat, dest.lng], { interactive: true }).addTo(map).bindPopup(`<b>Destination</b><br>${dest.name}`);
+
+            if (deliveryMarker) deliveryMarker.remove();
+            const messages = ['Almost there!', 'On my way!', 'Just a few minutes!'];
+            if (map) deliveryMarker = L.marker([deliveryPosition.lat, deliveryPosition.lng], { icon: avatars[avatar], interactive: true }).addTo(map).bindPopup(`<b>Ravi (Delivery Partner)</b><br>Status: En Route<br>Vehicle: ${avatar === 'bike' ? 'Bike' : avatar === 'car' ? 'Car' : 'On Foot'}<br>${messages[Math.floor(Math.random() * messages.length)]}`);
+
+            if (routePolyline) routePolyline.remove();
+            if (map) {
+                const waypoints = [[deliveryPosition.lat, deliveryPosition.lng], [(deliveryPosition.lat + dest.lat) / 2, (deliveryPosition.lng + dest.lng) / 2], [dest.lat, dest.lng]];
+                routePolyline = L.polyline(waypoints, { color: '#026aa7', weight: 4, dashArray: '5, 10' }).addTo(map);
+            }
+
+            trackingOrders.forEach((order, i) => {
+                const cityCoords = {
+                    delhi: { lat: 28.7041, lng: 77.1025, location: 'Delhi' },
+                    mumbai: { lat: 19.0760, lng: 72.8777, location: 'Mumbai' },
+                    pune: { lat: 18.5204, lng: 73.8567, location: 'Pune' },
+                    bengaluru: { lat: 12.9716, lng: 77.5946, location: 'Bengaluru' },
+                    kolkata: { lat: 22.5726, lng: 88.3639, location: 'Kolkata' }
+                };
+                order.tracking = { ...cityCoords[city], status: Math.random() > 0.5 ? 'In Transit' : 'Delivered', timestamp: new Date().toLocaleString() };
+                const li = document.createElement('li');
+                li.className = `order-card ${i === 0 && Math.random() > 0.7 ? 'priority' : ''}`;
+                li.innerHTML = `Order #${order.id} - ${order.service} (${order.fileName}) - ₹${order.totalCost}<br>Status: ${order.tracking.status} | Location: ${order.tracking.location} | Updated: ${order.tracking.timestamp}`;
+                trackingList.appendChild(li);
+                if (map) L.marker([order.tracking.lat, order.tracking.lng], { interactive: true }).addTo(map).bindPopup(`<b>Order #${order.id}</b><br>Service: ${order.service}<br>File: ${order.fileName}<br>Status: ${order.tracking.status}<br>Location: ${order.tracking.location}<br>Updated: ${order.tracking.timestamp}`);
+            });
+
+            const distance = calculateDistance(deliveryPosition.lat, deliveryPosition.lng, dest.lat, dest.lng);
+            const etaHours = distance / speed;
+            const etaMinutes = Math.round(etaHours * 60);
+            const initialDistance = calculateDistance(trackingData[city].start.lat, trackingData[city].start.lng, dest.lat, dest.lng);
+            const now = new Date();
+            const etaTime = new Date(now.getTime() + etaMinutes * 60000);
+            const etaEnd = new Date(etaTime.getTime() + 30 * 60000);
+
+            distanceInfo.innerHTML = `Distance to ${dest.name}: ${distance.toFixed(2)} km`;
+            etaInfo.innerHTML = `ETA: ${etaMinutes} minute${etaMinutes !== 1 ? 's' : ''}`;
+            timeWindow.innerHTML = `Time Window: ${etaTime.toLocaleTimeString()} - ${etaEnd.toLocaleTimeString()}`;
+            trackingLink.innerHTML = `Shareable Link: <a href="#">track.printiva.com/${Math.random().toString(36).substr(2, 9)}</a>`;
+            if (textTrack) textTrack.innerHTML = `${distance.toFixed(2)} km to ${dest.name}`;
+            map && map.setZoom(distance < 2 ? 15 : 13);
+            updateTimeline(distance);
+            updateHistory();
+
+            if (distance < 1 && !window.lastNotified) { showNotification('Delivery Partner is less than 1 km away!'); window.lastNotified = true; }
+            else if (distance >= 1) window.lastNotified = false;
+            if (distance < 0.1) {
+                history.push({ order: `Order #${trackingOrders[0]?.id || 'N/A'}`, status: 'Delivered', date: new Date().toLocaleString() });
+                localStorage.setItem('deliveryHistory', JSON.stringify(history));
+                points += 5; localStorage.setItem('points', points); document.getElementById('points').innerText = `${points} Points`;
+                setTimeout(() => alert('Rate Ravi: ★★★★★'), 1000);
+                particles.innerHTML = Array(10).fill().map(() => `<div class="particle" style="left: ${Math.random() * 100}%; top: ${Math.random() * 100}%"></div>`).join('');
+            }
+        }
+
+        function updateDeliveryPartner() {
+            const dest = customDest || (trackingOrders.length > 0 ? { lat: trackingOrders[0].tracking.lat, lng: trackingOrders[0].tracking.lng } : trackingData[currentCity].destination);
+            const stepLat = (dest.lat - deliveryPosition.lat) / 20;
+            const stepLng = (dest.lng - deliveryPosition.lng) / 20;
+
+            if (Math.abs(deliveryPosition.lat - dest.lat) > 0.01 || Math.abs(deliveryPosition.lng - dest.lng) > 0.01) {
+                deliveryPosition.lat += stepLat;
+                deliveryPosition.lng += stepLng;
+                routeHistory.push({ ...deliveryPosition });
+                if (map) {
+                    deliveryMarker.setLatLng([deliveryPosition.lat, deliveryPosition.lng]);
+                    map.panTo([deliveryPosition.lat, deliveryPosition.lng], { animate: true, duration: 0.5 });
+                }
+            } else {
+                deliveryPosition.lat = trackingData[currentCity].start.lat;
+                deliveryPosition.lng = trackingData[currentCity].start.lng;
+                routeHistory = [{ ...deliveryPosition }];
+            }
+            if (navigator.battery && navigator.battery.level < 0.2) setInterval(updateDeliveryPartner, 2000);
+            updateTrackingSection(currentCity);
+        }
+
+        function switchCity(city) { initMap(city); }
+        function setCustomAddress() {
+            const address = document.getElementById('address-input').value.toLowerCase();
+            const cityDest = {
+                'delhi': { lat: 28.7, lng: 77.1, name: address },
+                'mumbai': { lat: 19.1, lng: 72.9, name: address },
+                'pune': { lat: 18.52, lng: 73.85, name: address },
+                'bengaluru': { lat: 12.97, lng: 77.59, name: address },
+                'kolkata': { lat: 22.57, lng: 88.36, name: address }
+            };
+            customDest = cityDest[Object.keys(cityDest).find(city => address.includes(city)) || currentCity];
+            updateTrackingSection(currentCity);
+        }
+        function zoomToDriver() { if (map) map.panTo([deliveryPosition.lat, deliveryPosition.lng]); }
+        function showFullRoute() { if (map && routePolyline) map.fitBounds(routePolyline.getBounds()); }
+        function replayRoute() {
+            let i = 0;
+            const replay = setInterval(() => {
+                if (i < routeHistory.length) { 
+                    deliveryPosition = routeHistory[i]; 
+                    if (map) deliveryMarker.setLatLng([deliveryPosition.lat, deliveryPosition.lng]);
+                    updateTrackingSection(currentCity); 
+                    i++; 
+                } else clearInterval(replay);
+            }, 100);
+        }
+        function shareProgress() { alert('Shared to X: My Printiva order is ' + document.getElementById('distance-info').textContent); }
+        function cancelOrder() { 
+            trackingOrders = []; 
+            history.push({ order: 'Last Order', status: 'Cancelled', date: new Date().toLocaleString() }); 
+            localStorage.setItem('deliveryHistory', JSON.stringify(history)); 
+            updateTrackingSection(currentCity); 
+        }
+        function fabActions() { alert('Options: Zoom, Share, Cancel'); }
+
+        document.getElementById('avatar-select').addEventListener('change', (e) => { avatar = e.target.value; updateTrackingSection(currentCity); });
+        document.getElementById('language-select').addEventListener('change', (e) => {
+            const lang = e.target.value;
+            document.getElementById('track-title').textContent = translations[lang].title;
+            document.getElementById('address-input').placeholder = translations[lang].address;
+        });
+        document.querySelectorAll('.city-tab').forEach(tab => {
+            tab.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchCity(tab.textContent.toLowerCase()); } });
+            tab.addEventListener('touchstart', (e) => { e.preventDefault(); switchCity(tab.textContent.toLowerCase()); });
+        });
+        navigator.geolocation.getCurrentPosition(pos => { customDest = { lat: pos.coords.latitude, lng: pos.coords.longitude, name: 'Your Location' }; updateTrackingSection(currentCity); });
+        navigator.serviceWorker?.register('sw.js');
+
+        initMap('delhi');
+        setInterval(updateDeliveryPartner, 1000);
+    </script>
+</body>
+</html>
